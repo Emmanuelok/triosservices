@@ -1,0 +1,1 @@
+export default function NotFound(){return <main className="container section"><div className="eyebrow">TRIOS PROPERTY CARE</div><h1>Let’s get you back home.</h1><p style={{marginTop:20}}>This page could not be found.</p><a className="button" href="/" style={{marginTop:25}}>Back to Trios</a></main>}

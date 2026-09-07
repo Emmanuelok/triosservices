@@ -1,0 +1,56 @@
+import { PGlite } from '@electric-sql/pglite';
+import { build } from 'esbuild';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import {fileURLToPath} from 'node:url';
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+const temp=fs.mkdtempSync(path.join(os.tmpdir(),'trios-postgres-'));
+const db=new PGlite();
+try{await db.exec(fs.readFileSync(root+'/migrations/postgres/001_trios.sql','utf8'))}catch(e){throw new Error('Migration: '+e.message)}
+await build({entryPoints:[root+'/lib/postgres-db.ts'],outfile:temp+'/adapter.mjs',bundle:true,platform:'node',format:'esm',packages:'external'});
+// Bundle through a local stub to avoid connecting to a remote database during tests.
+const adapterSource=fs.readFileSync(root+'/lib/postgres-db.ts','utf8');
+await build({stdin:{contents:adapterSource.replace("import postgres from 'postgres';",'const postgres=()=>globalThis.__postgres;'),resolveDir:root+'/lib',loader:'ts'},outfile:temp+'/adapter-test.mjs',bundle:true,platform:'node',format:'esm'});
+let transactionCount=0;
+globalThis.__postgres={async begin(fn){transactionCount++;return db.transaction(async tx=>fn({unsafe:async(sql,args)=>{const out=await tx.query(sql,args);return Object.assign(out.rows,{count:out.affectedRows||0})},...{} }))}};
+// Tagged SQL setup and locking use the same real transaction.
+globalThis.__postgres.begin=async fn=>{transactionCount++;return db.transaction(async tx=>{const query=async strings=>tx.query(strings.join(''));query.unsafe=async(sql,args)=>{const out=await tx.query(sql,args);return Object.assign(out.rows,{count:out.affectedRows||0})};return fn(query)})};
+process.env.DATABASE_URL='postgres://test-only';
+const {database,postgresQuery}=await import(temp+'/adapter-test.mjs');
+assert.equal(postgresQuery("SELECT '?' AS literal, ? AS value"),"SELECT '?' AS literal, $1 AS value");
+await database.prepare('INSERT OR IGNORE INTO contacts (id,name,email,phone,notes,created_at) VALUES (?,?,?,?,?,?)').bind('c1','Test','test@example.com','7090000000','','2026-09-07').run();
+await database.prepare('INSERT OR IGNORE INTO contacts (id,name,email,phone,notes,created_at) VALUES (?,?,?,?,?,?)').bind('c2','Test','test@example.com','7090000000','','2026-09-07').run();assert.equal((await database.prepare('SELECT * FROM contacts').all()).results.length,1);
+await assert.rejects(database.batch([database.prepare('INSERT INTO planner_usage(id,count) VALUES (?,?)').bind('rollback',1),database.prepare('INSERT INTO planner_usage(id,count) VALUES (?,?)').bind('rollback',2)]));assert.equal(await database.prepare('SELECT * FROM planner_usage WHERE id=?').bind('rollback').first(),null);
+console.log('PASS PostgreSQL migration, parameter binding, conflict handling and atomic rollback');
+const stamp='2026-09-07T00:00:00.000Z';
+await database.prepare('INSERT INTO requests(id,user_id,customer_name,email,phone,address,area,postal_code,services,frequency,details,status,quote_total,quote_terms,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind('r1','alice','Alice','alice@example.com','7090000000','Test property','St. John’s','A1A 1A1','["snow"]','Seasonal','{"photos":["photo1"]}','quoted',10000,'Agreed scope',stamp,stamp).run();
+await database.prepare('INSERT INTO approvals(id,request_id,signer,method,evidence,quote_total,quote_terms,recorded_by,created_at,quote_version) VALUES (?,?,?,?,?,?,?,?,?,?)').bind('approval1','r1','Alice','Email','Approval evidence',10000,'Agreed scope','Owner',stamp,stamp).run();
+await assert.rejects(database.prepare('INSERT INTO approvals(id,request_id,signer,method,evidence,quote_total,quote_terms,recorded_by,created_at,quote_version) VALUES (?,?,?,?,?,?,?,?,?,?)').bind('approval2','r1','Alice','Email','Approval evidence',10000,'Agreed scope','Owner',stamp,'stale').run(),/stale_approval/);
+await database.prepare('INSERT INTO invoices(id,request_id,user_id,description,amount_cents,tax_cents,due_date,status,created_at) VALUES (?,?,?,?,?,?,?,?,?)').bind('i1','r1','alice','Seasonal care',9000,1000,'2026-12-01','open',stamp).run();
+const pay=(id,cents)=>database.prepare('INSERT INTO payments(id,invoice_id,amount_cents,method,reference,received_at,recorded_by,created_at) VALUES (?,?,?,?,?,?,?,?)').bind(id,'i1',cents,'E-transfer','Reference',stamp,'Owner',stamp).run();
+await pay('p1',6000);await assert.rejects(pay('p2',4001),/payment_exceeds_balance/);await pay('p3',4000);
+console.log('PASS PostgreSQL quote-version and invoice-balance guards');
+await database.prepare('INSERT INTO crew(id,name,email,phone,area,active,created_at) VALUES (?,?,?,?,?,?,?)').bind('crew1','Crew','crew@example.com','7090000000','St. John’s',1,stamp).run();
+await database.prepare('INSERT INTO business_settings(id,value,updated_at) VALUES (?,?,?)').bind('operations','{"dailyCapacity":1}',stamp).run();
+const job=(id,date,window)=>database.prepare('INSERT INTO jobs(id,request_id,user_id,service,scheduled_date,time_window,crew_id,priority,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?)').bind(id,'r1','alice','snow',date,window,'crew1','Standard','scheduled',stamp).run();
+await job('j1','2026-12-01','Morning');await assert.rejects(job('j2','2026-12-01','Evening'),/crew_capacity/);
+await assert.rejects(database.prepare('UPDATE jobs SET version=? WHERE id=?').bind(0,'j1').run(),/stale_visit/);
+await database.prepare('UPDATE jobs SET status=?,version=?,photos=? WHERE id=?').bind('completed',1,'["photo1"]','j1').run();await assert.rejects(database.prepare('UPDATE jobs SET status=?,version=? WHERE id=?').bind('scheduled',2,'j1').run(),/closed_visit/);
+await database.prepare('UPDATE jobs SET user_id=? WHERE id=?').bind('new-verified-owner','j1').run();assert.equal((await database.prepare('SELECT * FROM jobs WHERE id=?').bind('j1').first()).version,1);
+await assert.rejects(job('j3','2026-12-01','morning'),/jobs_unique_active_visit/);
+assert.ok(await database.prepare('SELECT j.id FROM jobs j WHERE EXISTS (SELECT 1 FROM json_each(j.photos) WHERE value=?)').bind('photo1').first());
+assert.ok(await database.prepare("SELECT r.id FROM requests r WHERE EXISTS (SELECT 1 FROM json_each(json_extract(r.details,'$.photos')) WHERE value=?)").bind('photo1').first());
+console.log('PASS PostgreSQL crew capacity, duplicate visits, terminal state and private photo queries');
+// Verify the actual auth resolver ignores forged host headers and rejects unverified emails.
+let providerUser=null;
+const authStub={name:'auth-provider',setup(b){b.onResolve({filter:/^@supabase\/ssr$|^next\/headers$/},a=>({path:a.path,namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},a=>({contents:a.path==='next/headers'?"export async function cookies(){return {getAll(){return []},set(){}}} export async function headers(){return new Headers({'oai-authenticated-user-email':'owner@example.com','oai-authenticated-user-id':'owner'})}":'export function createServerClient(){return {auth:{async getUser(){return {data:{user:globalThis.__authProviderUser},error:null}}}}}',loader:'js'}))}};
+await build({entryPoints:[root+'/lib/supabase/server.ts'],outfile:temp+'/auth.mjs',bundle:true,platform:'node',format:'esm',plugins:[authStub]});
+process.env.NEXT_PUBLIC_SUPABASE_URL='https://test.supabase.co';process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY='test';
+const {verifiedUser}=await import(temp+'/auth.mjs');
+globalThis.__authProviderUser=null;assert.equal(await verifiedUser(),null);
+globalThis.__authProviderUser={id:'owner',email:'owner@example.com',email_confirmed_at:null};assert.equal(await verifiedUser(),null);
+globalThis.__authProviderUser={id:'verified',email:'customer@example.com',email_confirmed_at:stamp};assert.equal((await verifiedUser()).id,'verified');
+console.log('PASS Vercel sign-in ignores forged Sites headers and requires provider-verified email');
+await db.close();fs.rmSync(temp,{recursive:true,force:true});

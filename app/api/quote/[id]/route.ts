@@ -1,0 +1,11 @@
+import { linkCustomer } from '@/lib/operations-server';
+import { identity,sql,noCache,fail } from '@/lib/server';
+import { documentHtml,escapeHtml as e } from '@/lib/documents';
+import { money,niceDate,CONTACT,SERVICES } from '@/lib/catalog';
+export async function GET(req:Request,{params}:{params:Promise<{id:string}>}){try{
+ const user=await identity();if(!user)return new Response('Sign in required',{status:401,headers:noCache});if(!user.owner)await linkCustomer(user);const {id}=await params;
+ const r=await sql().prepare('SELECT * FROM requests WHERE id=?').bind(id).first();if(!r||r.quote_total===null||(!user.owner&&r.user_id!==user.id))return new Response('Quote not found',{status:404,headers:noCache});
+ const approval=await sql().prepare('SELECT * FROM approvals WHERE request_id=? ORDER BY created_at DESC LIMIT 1').bind(id).first();const ref='TR-'+id.slice(0,8).toUpperCase();
+ const content=documentHtml('Trios quote '+ref,`<header><strong>TRIOS SNOW AND MOWING INC.</strong><h1>Property care quote</h1><p>${ref} · ${e(niceDate(r.updated_at))}<br>${e(CONTACT.email)} · ${e(CONTACT.phone)}</p></header><h2>Prepared for ${e(r.customer_name)}</h2><p>${e(r.address)}, ${e(r.area)} · ${e(r.postal_code)}<br>${e(r.email)} · ${e(r.phone)}</p><p><strong>Services:</strong> ${e(JSON.parse(r.services).map((id:string)=>SERVICES.find(s=>s.id===id)?.name||id).join(', '))}<br><strong>Frequency:</strong> ${e(r.frequency)}</p><p class="total">Full quote total: ${money(r.quote_total/100)} CAD</p><h2>Scope, timing and terms</h2><div class="terms">${e(r.quote_terms)}</div><p><strong>Status:</strong> ${e(r.status)}</p>${approval?`<p>Approval recorded by Trios from ${e(approval.signer)} through ${e(approval.method)} on ${e(niceDate(approval.created_at))}.</p>`:''}<p>Review this quote and confirm acceptance in your property account, or contact Trios to arrange approval. Scheduling follows acceptance of the agreed scope and price.</p><p class="muted">${e(CONTACT.website)} · St. John’s, Newfoundland and Labrador</p>`);
+ return new Response(content,{headers:{...noCache,'Content-Type':'text/html; charset=utf-8','Content-Disposition':`attachment; filename="Trios-Quote-${ref}.html"`,'X-Content-Type-Options':'nosniff'}});
+ }catch(error){return fail(error)}}
