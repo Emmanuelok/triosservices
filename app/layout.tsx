@@ -9,6 +9,7 @@ import "./workflow-upgrade.css";
 import "./moving-upgrade.css";
 import "./moving-intake.css";
 import "./moving-workspace.css";
+import "./cinematic-home.css";
 
 export const viewport: Viewport = {
   width: "device-width",

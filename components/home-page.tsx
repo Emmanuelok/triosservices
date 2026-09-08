@@ -1,24 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowUpRight, ArrowRight, Snowflake, Leaf, CalendarDays, MapPin, ClipboardCheck, House, Phone, Check, SlidersHorizontal, Truck } from 'lucide-react';
+import { ArrowUpRight, ArrowRight, Snowflake, CalendarDays, MapPin, ClipboardCheck, House, Phone, Check, SlidersHorizontal } from 'lucide-react';
 import { SERVICES, CONTACT, SEASON } from '@/lib/catalog';
 import { Pick, ServiceIcon } from './shared';
 import { MovingFeatureBand } from './moving-public';
 import { SeasonalExplorer, PublicFAQ, CareProcess } from './public-care-tools';
+import { CinematicHero } from './cinematic-hero';
 
 export function Home() {
   const [service, setService] = useState('snow');
   const [postal, setPostal] = useState('');
-  const [season, setSeason] = useState<'winter' | 'summer' | 'moving'>('moving');
-  const winter = season === 'winter';
-  const moving = season === 'moving';
   return <div className="public-upgrade public-home">
-    <section className="public-hero">
-      <div className="container public-hero-grid">
-        <div className="public-hero-copy"><div className="eyebrow"><span className="public-live-dot" />ST. JOHN’S. EVERY SEASON.</div><h1>Every season.<br />Every new chapter.<br /><em>A little more life<br className="public-small-break" /> for you.</em></h1><p>From the first snowfall to the final box in your new home. Bring snow clearing, lawn care and moving help together with Trios Snow and Mowing Inc.</p><div className="public-hero-actions"><a className="button lime" href="/book">Build your property plan <ArrowUpRight size={22} /></a><a className="public-light-link" href="/services">Explore all services <ArrowRight size={21} /></a></div><div className="public-hero-assurance"><ClipboardCheck size={21} /><span>Your property. Your scope. Your agreed price.</span></div></div>
-        <div className="public-hero-visual"><div className="public-hero-photo"><img key={season} src={moving ? '/moving-hero.webp' : winter ? '/winter-hero.webp' : '/summer-lawn.webp'} width={1536} height={1024} fetchPriority="high" alt={moving ? 'Moving boxes and a houseplant ready for a new home' : winter ? 'A Newfoundland home in winter with snow cleared from its driveway' : 'An established green lawn and carefully maintained residential garden'} /><div className="public-hero-photo-shade" /><div className="public-hero-photo-caption"><span>{moving ? 'A NEW CHAPTER, THOUGHTFULLY PLANNED' : winter ? 'WINTER, MADE CLEARER' : 'SUMMER, MADE EASIER'}</span><strong>{moving ? 'Fresh start.\nA little more help.' : winter ? 'A better start\nto your day.' : 'More weekends.\nLess yard work.'}</strong><a href={moving ? '/moving' : winter ? '/services/snow' : '/services/lawn'} aria-label={moving ? 'Explore moving services' : winter ? 'Explore snow clearing' : 'Explore lawn care'}><ArrowUpRight size={29} /></a></div></div><div className="public-hero-season-switch moving-home-switch" aria-label="Preview Trios services"><button type="button" aria-pressed={winter} onClick={() => setSeason('winter')}><Snowflake size={21} />Snow care</button><button type="button" aria-pressed={season === 'summer'} onClick={() => setSeason('summer')}><Leaf size={21} />Lawn care</button><button type="button" aria-pressed={moving} onClick={() => setSeason('moving')}><Truck size={21} />Moving help</button></div><div className="public-hero-picture-note"><MapPin size={18} /><span>St. John’s & surrounding communities</span></div></div>
-      </div>
+    <CinematicHero />
+    <section className="cinematic-request-band" aria-label="Start a property care request">
       <div className="container"><form className="public-quote-start" action="/book"><div className="public-quote-intro"><House size={28} /><div><strong>Good care starts here.</strong><span>Tell us what your property needs.</span></div></div><div className="field"><label htmlFor="home-service">Choose your first service</label><Pick id="home-service" value={service} onChange={setService} label="Service" options={SERVICES.map(s => ({ value: s.id, label: s.name }))} /><input type="hidden" name="service" value={service} /></div><label htmlFor="home-postal">Postal code <span>(optional)</span><input id="home-postal" name="postal" autoComplete="postal-code" autoCapitalize="characters" spellCheck={false} placeholder="A1A 1A1" value={postal} onChange={e => setPostal(e.target.value.toUpperCase())} maxLength={7} pattern="[ABCEGHJ-NPRSTVXYabceghj-nprstvxy][0-9][ABCEGHJ-NPRSTVWXYZabceghj-nprstvwxyz][ -]?[0-9][ABCEGHJ-NPRSTVWXYZabceghj-nprstvwxyz][0-9]" /></label><button className="button" type="submit">Start my request <ArrowRight size={21} /></button></form></div>
     </section>
     <div className="container public-value-strip"><span><MapPin size={23} />Locally focused</span><span><CalendarDays size={23} />One-time or seasonal</span><span><ClipboardCheck size={23} />Scope agreed first</span><span><House size={23} />Your home & next move</span></div>

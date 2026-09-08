@@ -1,0 +1,160 @@
+{
+  "schema_version": "1.0",
+  "project": {
+    "id": "trios-cinematic-home-v1",
+    "name": "Every season. Every new chapter.",
+    "mode": "screen-production",
+    "objective": "Introduce Trios property care and moving through a realistic silent landing-page film.",
+    "audience": "St. John's homeowners, renters and local movers on desktop and mobile",
+    "governing_idea": "One home, cared for through changing seasons and new beginnings.",
+    "status": "verified_for_release"
+  },
+  "creative_system": {
+    "palette": {
+      "dominant": [
+        "forest teal",
+        "cream"
+      ],
+      "accent": [
+        "leaf green"
+      ]
+    },
+    "camera": "Slow, grounded, documentary framing with center-right action.",
+    "typography": "Editable HTML over a dark gradient; readable on phones.",
+    "sound": "Silent; no audio stream in delivered files.",
+    "invariants": [
+      "Preserve the official logo outside the film.",
+      "No unverified business claims or footage presented as actual Trios staff.",
+      "All work depicted at ground level."
+    ]
+  },
+  "assets": [
+    {
+      "id": "film-generation",
+      "type": "video",
+      "source": "ef56d583-52d8-4c52-9890-c07b25c4d097",
+      "provider": "Higgsfield",
+      "model": "kling3_0",
+      "params": {
+        "aspect_ratio": "16:9",
+        "duration": 15,
+        "mode": "pro",
+        "model": "kling3_0",
+        "prompt": "Create a premium, photorealistic six-shot cinematic film about thoughtful year-round property care and moving in St. John's, Newfoundland, Canada. A real-world observational documentary aesthetic, natural human movement, convincing tools, fine material detail, subtle film grain, restrained forest-teal and warm-neutral grade. Modest detached coastal homes with painted timber siding, no extreme mountains. Camera movement is extremely slow and stable. Compose main work in the CENTER-RIGHT of the frame, room for website text left. Keep workers mid-distance or hands partially obscured naturally; plain charcoal or muted teal work clothes, appropriate gloves and boots. No faces close to camera. All work ground-level. Strictly follow six distinct editorial shots in this order, hard cuts, never magical morphs or split screens. Shot 1 (0–2.5 seconds): blue-hour winter driveway beside a cream-sided coastal house; an adult walking steadily behind an ordinary two-stage snowblower, its wheels firmly on the ground, a modest physically realistic plume of snow thrown to the right onto an existing snowbank, cleared walkway visible. Shot 2 (2.5–5 seconds): matching home in a fresh green summer garden, low slow lateral camera; a gardener walking behind a normal lawnmower over neat grass, planted beds and neatly clipped hedge in the background. Shot 3 (5–7.5 seconds): autumn golden light, medium side view of a worker using a leaf rake to pull dry leaves into a small pile beside reusable garden-waste bags and a closed wheelie bin; orderly patio chairs and pots nearby. Shot 4 (7.5–10 seconds): intimate waist-level detail at a ground-floor house window; gloved hands draw a normal squeegee once down wet glass, clean siding and a freshly washed path visible, all geometrically stable and physically plausible. Shot 5 (10–12.5 seconds): warm sunlit home interior with moving boxes, a gloved adult carefully wraps a small wooden side table with a moving blanket, a second worker steadies it; normal anatomy and scale, unprinted cardboard boxes, a hand truck nearby, focus on careful preparation. Shot 6 (12.5–15 seconds): wide view from a sunlit porch, two adults carry ONE medium cardboard box each calmly into a welcoming teal front door; healthy garden and swept entry, elegant quiet feeling of a fresh start. The final framing echoes the opening house entry for a natural repeat. No visible brands, logos, typography, text, watermarks, claims, fake uniforms, unsafe work, ladders, roof access, flashy transitions, surreal equipment, floating feet, oversaturated colours, fast zooms, talking or audio. Every shot must depict believable practical work, not empty landscapes.",
+        "sound": "off"
+      },
+      "estimated_credits": 26.25,
+      "description": "AI-generated illustrative property-care montage; not documentary footage of actual Trios personnel.",
+      "source_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3ChJ2tLVG7i2Ag6ynWBf8Xmyz6a/hf_20260908_203029_ef56d583-52d8-4c52-9890-c07b25c4d097.mp4"
+    }
+  ],
+  "service_coverage": [
+    {
+      "family": "Snow & ice",
+      "services": [
+        "snow",
+        "walkways",
+        "ice",
+        "windrow"
+      ],
+      "shot": "Snow clearing with a cleared entry; related ice/return-visit options presented in service pages."
+    },
+    {
+      "family": "Lawn & garden",
+      "services": [
+        "lawn",
+        "garden",
+        "aeration",
+        "hedges"
+      ],
+      "shot": "Mowing with established beds and clipped hedges; aeration is an associated service, not a literal depicted task."
+    },
+    {
+      "family": "Seasonal cleanup",
+      "services": [
+        "spring",
+        "fall",
+        "gutters",
+        "hauling"
+      ],
+      "shot": "Raking with bagged yard material; gutters and off-site hauling remain assessment-only options in the catalog."
+    },
+    {
+      "family": "Cleaning & exteriors",
+      "services": [
+        "cleaning",
+        "washing",
+        "windows"
+      ],
+      "shot": "Ground-floor window cleaning and refreshed entry; home-cleaning options linked in page."
+    },
+    {
+      "family": "Moving",
+      "services": [
+        "moving"
+      ],
+      "shot": "Packing furniture and carrying boxes into a home; no transport or capacity guarantees."
+    },
+    {
+      "family": "Everyday help",
+      "services": [
+        "bins",
+        "furniture"
+      ],
+      "shot": "Bins and patio furniture within a cared-for property; dedicated services linked in page."
+    }
+  ],
+  "deliverables": [
+    {
+      "path": "public/films/trios-seasons-v1.mp4",
+      "role": "desktop background",
+      "status": "encoded",
+      "bytes": 1832360,
+      "duration_seconds": 15.042,
+      "frame_rate": 24,
+      "codec": "H.264",
+      "audio": false,
+      "pixel_format": "yuv420p",
+      "fast_start": true,
+      "dimensions": "1280x720"
+    },
+    {
+      "path": "public/films/trios-seasons-mobile-v1.mp4",
+      "role": "mobile background",
+      "status": "encoded",
+      "bytes": 1160976,
+      "duration_seconds": 15.042,
+      "frame_rate": 24,
+      "codec": "H.264",
+      "audio": false,
+      "pixel_format": "yuv420p",
+      "fast_start": true,
+      "dimensions": "854x480"
+    },
+    {
+      "path": "public/films/trios-seasons-poster-v1.webp",
+      "role": "fast initial paint and static fallback",
+      "status": "encoded",
+      "bytes": 78918,
+      "dimensions": "1920x1080"
+    }
+  ],
+  "qa": {
+    "required_checks": [
+      "inspect actual rendered shots",
+      "verify encoding and sizes",
+      "desktop and 320/390/768 layouts",
+      "autoplay and pause/resume",
+      "reduced-motion and Save-Data",
+      "typecheck, existing test suite and production build"
+    ],
+    "review_notes": [
+      "All six requested service-family scenes are present in the generated montage. Inspected a 15-frame contact sheet from the actual output.",
+      "Some prompt details vary: final entry shows one worker; packing includes a padded stool/side table. The film remains illustrative.",
+      "Final desktop delivery is 1.83 MB at 1280x720; mobile is 1.16 MB at 854x480. Both are silent H.264 with fast-start metadata. A larger 1080p encode was reduced to fit the deployment connector per-file limit; the generated source remains 1080p.",
+      "TypeScript, 71 existing tests, and production build passed. A clean build restored and verified all three media files from pinned GitHub commit 946faf2db521a241643cebab54afe669562cd86c.",
+      "Desktop Chrome and 320/390/768-pixel iframe layouts verified: no overflow, body text 18px, silent autoplay, proper mobile source, pause/resume and moving navigation passed.",
+      "Reduced-motion and Save-Data source gating independently reviewed. Simulated preference iframe test could not validate runtime behavior because Next routing rejects about:srcdoc URLs; do not count that harness failure as a passed preference test. Physical Safari/Android preference modes were not emulated."
+    ]
+  }
+}
