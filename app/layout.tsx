@@ -1,6 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { socialDescription, socialImage, socialOpenGraph, socialTitle, siteOrigin } from "@/lib/social-preview";
 import "./globals.css";
+import "./public-upgrade.css";
+import "./operations-upgrade.css";
+import "./customer-upgrade.css";
+import "./assistants-upgrade.css";
+import "./workflow-upgrade.css";
 
 export const viewport: Viewport = {
   width: "device-width",

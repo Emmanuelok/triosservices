@@ -1,0 +1,34 @@
+import { build } from 'esbuild';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root=fileURLToPath(new URL('..',import.meta.url));
+const work=fs.mkdtempSync(path.join(os.tmpdir(),'trios-customer-test-'));
+process.on('exit',()=>fs.rmSync(work,{recursive:true,force:true}));
+const source=fs.readFileSync(root+'/components/booking.tsx','utf8')+'\nexport {cleanForm,consumeQuery,initial};';
+let state=[],refs=[],effectSlots=[],effects=[],stateIndex=0,refIndex=0,effectIndex=0,dirty=false;
+globalThis.__hooks={useState(value){const index=stateIndex++;if(!(index in state))state[index]=value;return[state[index],next=>{state[index]=typeof next==='function'?next(state[index]):next;dirty=true}]},useRef(value){return refs[refIndex++]??={current:value}},useEffect(fn,deps){const index=effectIndex++,old=effectSlots[index];if(!old||deps.some((value,i)=>!Object.is(value,old.deps[i])))effects.push(()=>{old?.cleanup?.();effectSlots[index]={deps,cleanup:fn()}})}};
+const storage=new Map(),listeners=new Map();
+globalThis.sessionStorage={getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key),key:index=>[...storage.keys()][index],get length(){return storage.size}};
+globalThis.window={location:{search:'?plan=lawn'},addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name),matchMedia:()=>({matches:true}),scrollTo(){}};
+globalThis.__account={data:{user:{id:'customer-a',email:'a@example.com',name:'Customer A'},properties:[]},loading:false,error:''};
+const stub={name:'customer-harness',setup(builder){builder.onResolve({filter:/^(react(?:\/jsx-runtime)?|lucide-react|sonner|\.\/shared|\.\/site-app|\.\/customer-tools|@\/components\/ui\/)/},args=>({path:args.path,namespace:'mock'}));builder.onLoad({filter:/.*/,namespace:'mock'},args=>{let contents;if(args.path==='react')contents='export const {useState,useEffect,useRef}=globalThis.__hooks';else if(args.path==='react/jsx-runtime')contents='export const jsx=(type,props)=>({type,props}),jsxs=jsx,Fragment="Fragment"';else if(args.path==='lucide-react')contents='export const ArrowRight=0,ArrowLeft=0,Check=0,CheckCircle2=0,ShieldCheck=0,RotateCcw=0,FileDown=0,Copy=0,Pencil=0,CheckSquare=0,Leaf=0,Snowflake=0,Layers=0';else if(args.path==='sonner')contents='export const toast={success(){},error(){}}';else if(args.path==='./shared')contents='export const Pick=0,ServiceIcon=0,Notice=0,ErrorNotice=0,UploadPhotos=0,Loading=0;export const useData=()=>globalThis.__account,saveData=async()=>({ok:true,id:"saved"})';else if(args.path==='./site-app')contents='export const Intro=0';else if(args.path==='./customer-tools')contents='export const CustomerContact=0,useCustomerReadiness=()=>({readiness:{status:"setup_required",bookingAvailable:false,accountsAvailable:false},retry(){}}),customerToday=()=>"2026-09-08"';else contents='export const Checkbox=0,AlertDialog=0,AlertDialogContent=0,AlertDialogTitle=0,AlertDialogDescription=0,AlertDialogFooter=0,AlertDialogCancel=0';return{contents,loader:'js'}})}};
+await build({stdin:{contents:source,resolveDir:root+'/components',sourcefile:'booking.tsx',loader:'tsx'},outfile:work+'/customer-isolation-bundle.mjs',bundle:true,format:'esm',platform:'node',jsx:'automatic',plugins:[stub],tsconfig:root+'/tsconfig.json'});
+const {Booking,cleanForm,consumeQuery,initial}=await import(work+'/customer-isolation-bundle.mjs');
+assert.equal(cleanForm({...initial,details:{plan:'lawn'}}).details.plan,'lawn');
+assert.deepEqual(consumeQuery(cleanForm(initial)).services,['lawn']);
+assert.equal(consumeQuery(cleanForm(initial)).frequency,'Weekly');
+const prefix='trios-quote-draft:v2:';
+storage.set(prefix+'customer-a',JSON.stringify({version:2,scope:'customer-a',savedAt:Date.now(),form:{...initial,name:'Private A',address:'100 Private A Street',details:{...initial.details,access:'A gate note',photos:['11111111-1111-4111-8111-111111111111']}}}));
+function render(){stateIndex=0;refIndex=0;effectIndex=0;effects=[];dirty=false;const tree=Booking();for(const effect of effects)effect();return tree}
+function settle(){for(let attempt=0;attempt<10;attempt++){render();if(!dirty)return}throw Error('Hook render did not settle')}
+settle();assert.equal(state[0].address,'100 Private A Street');
+globalThis.__account={data:{user:{id:'customer-b',email:'b@example.com',name:'Customer B'},properties:[]},loading:false,error:''};
+render();
+assert.equal(storage.has(prefix+'customer-b'),false,'An account-change render must never save the previous form under the next account');
+settle();const b=JSON.parse(storage.get(prefix+'customer-b'));assert.equal(b.form.address,'');assert.equal(b.form.details.access,'');assert.deepEqual(b.form.details.photos,[]);assert.equal(b.form.name,'Customer B');
+listeners.get('trios:signout')();assert.equal(storage.has(prefix+'customer-a'),false);assert.equal(storage.has(prefix+'customer-b'),false);assert.equal(state[0].address,'');
+console.log('PASS lawn plan query and draft preservation; PASS account-switch render cannot save old form into the new account; PASS private access notes/photos stay scoped; PASS sign-out clears all account drafts');
+for(const slot of effectSlots)slot?.cleanup?.();fs.unlinkSync(work+'/customer-isolation-bundle.mjs');

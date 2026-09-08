@@ -8,7 +8,7 @@ export const dynamic='force-dynamic';
 const txt=(min=1,max=500)=>z.string().trim().min(min).max(max);
 const date=validDate;
 const serviceIds=SERVICES.map(x=>x.id);
-const details=z.object({drivewaySize:z.enum(['1','2','3','large']).default('1'),salt:z.boolean().default(false),walkway:z.boolean().default(false),priority:z.boolean().default(false),departureTime:txt(0,20).default(''),lawnArea:txt(0,50).default(''),surface:txt(0,50).default('Paved'),slope:txt(0,50).default('Level'),access:txt(0,1500).default(''),snowStorage:txt(0,1000).default(''),preferredDate:txt(0,20).default(''),photos:z.array(z.string().uuid()).max(6).default([]),plan:txt(0,50).default('')});
+const details=z.object({drivewaySize:z.enum(['1','2','3','large']).default('1'),salt:z.boolean().default(false),walkway:z.boolean().default(false),priority:z.boolean().default(false),departureTime:txt(0,20).default(''),lawnArea:txt(0,50).default(''),surface:txt(0,50).default('Paved'),slope:txt(0,50).default('Level'),access:txt(0,1500).default(''),snowStorage:txt(0,1000).default(''),preferredDate:z.union([validDate,z.literal('')]).default(''),photos:z.array(z.string().uuid()).max(6).default([]),plan:txt(0,50).default('')});
 const schemas={
  request:z.object({action:z.literal('request'),id:z.string().uuid(),name:txt(2,100),email:z.string().email().max(200),phone:txt(7,30),address:txt(5,250),area:txt(2,100),postalCode:txt(6,8).regex(/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTVWXYZ][ -]?\d[ABCEGHJ-NPRSTVWXYZ]\d$/i),services:z.array(z.string().refine(s=>serviceIds.includes(s))).min(1).max(17),frequency:txt(2,60),details,consent:z.literal(true)}),
  property:z.object({action:z.literal('property'),id:z.string().uuid().optional(),label:txt(2,100),address:txt(5,250),area:txt(2,100),postalCode:txt(6,8),details:txt(0,2000).default('')}),
@@ -23,8 +23,8 @@ const schemas={
  crew:z.object({action:z.literal('crew'),name:txt(2,100),email:z.string().email(),phone:txt(0,30),area:txt(2,100)}),
  invoice:z.object({action:z.literal('invoice'),requestId:z.string().uuid(),description:txt(3,2000),amount:currency,tax:currency,dueDate:date}),
  reply:z.object({action:z.literal('reply'),id:z.string().uuid(),reply:txt(3,3000)}),
- equipment:z.object({action:z.literal('equipment'),name:txt(2,100),kind:txt(2,100),status:z.enum(['Ready','Maintenance','Out of service']),nextService:txt(0,20),notes:txt(0,2000)}),
- equipment_update:z.object({action:z.literal('equipment_update'),id:z.string().uuid(),status:z.enum(['Ready','Maintenance','Out of service']),nextService:txt(0,20),notes:txt(0,2000)}),
+ equipment:z.object({action:z.literal('equipment'),name:txt(2,100),kind:txt(2,100),status:z.enum(['Ready','Maintenance','Out of service']),nextService:z.union([validDate,z.literal('')]),notes:txt(0,2000)}),
+ equipment_update:z.object({action:z.literal('equipment_update'),id:z.string().uuid(),status:z.enum(['Ready','Maintenance','Out of service']),nextService:z.union([validDate,z.literal('')]),notes:txt(0,2000)}),
  ...operationsSchemas,
 };
 async function validUploads(ids:string[],userId:string){for(const id of ids){const row=await sql().prepare('SELECT id FROM uploads WHERE id=? AND user_id=?').bind(id,userId).first();if(!row)return false}return true}

@@ -22,14 +22,21 @@ export function postgresQuery(source:string){
 async function execute(tx:any,statement:Statement){const rows=await tx.unsafe(postgresQuery(statement.query),statement.args);return {results:Array.from(rows),meta:{changes:rows.count},success:true}}
 class Statement{
  args:any[]=[];
- constructor(public query:string){}
+ constructor(public query:string, private runner?: (statement: Statement) => Promise<any>){}
  bind(...args:any[]){this.args=args;return this}
- async all(){return (await database.batch([this]))[0]}
+ async all(){return this.runner ? this.runner(this) : (await database.batch([this]))[0]}
  async first(){return (await this.all()).results[0]??null}
  async run(){return this.all()}
 }
 export const database={
  prepare(query:string){return new Statement(query)},
+ async transaction<T>(work:(db:{prepare(query:string):Statement})=>Promise<T>):Promise<T>{
+  return client().begin(async tx=>{
+   await tx`SET LOCAL search_path TO trios, public`;
+   await tx`SELECT pg_advisory_xact_lock(hashtext('trios-write'))`;
+   return work({prepare(query:string){return new Statement(query,statement=>execute(tx,statement))}});
+  }) as Promise<T>;
+ },
  async batch(statements:Statement[]):Promise<any[]>{
   return client().begin(async tx=>{
    await tx`SET LOCAL search_path TO trios, public`;

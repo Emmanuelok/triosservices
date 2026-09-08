@@ -1,46 +1,30 @@
 'use client';
+
 import { useState } from 'react';
-import { ArrowUpRight, ArrowRight, Check, Snowflake, Leaf, CalendarDays, MapPin, Sparkles, ClipboardCheck, House } from 'lucide-react';
-import { SERVICES } from '@/lib/catalog';
-import { Pick } from './shared';
-import { ServiceCard } from './site-app';
-export function Home(){
- const [service,setService]=useState('snow'),[postal,setPostal]=useState('');
- return <>
-  <section className="seasonal-hero">
-   <div className="container seasonal-hero-grid">
-    <div className="seasonal-hero-copy">
-     <div className="eyebrow"><span className="eyebrow-line"/>ST. JOHN’S. ALL YEAR ROUND.</div>
-     <h1>Every season.<br/><em>Taken care of.</em></h1>
-     <p>Freshly cut lawns. Clear driveways. A home that’s ready for whatever Newfoundland brings.</p>
-     <div className="hero-actions"><a className="button" href="/book">Find your property care <ArrowUpRight size={22}/></a><a className="text-link" href="/plans">Explore seasonal plans <ArrowRight size={21}/></a></div>
-     <div className="hero-promise"><Check size={20}/><span>One-time help or a plan for the whole year.</span></div>
-    </div>
-    <div className="seasonal-photography">
-     <a className="winter-feature" href="/services/snow" aria-label="Explore winter snow clearing">
-      <img src="/winter-hero.webp" width={1536} height={1024} fetchPriority="high" alt="A snow-covered Newfoundland home with a cleared driveway"/>
-      <div className="photo-caption"><span className="photo-caption-icon"><Snowflake size={26}/></span><span><span>READY FOR WINTER</span><strong>A clearer start.</strong></span><ArrowUpRight size={24}/></div>
-     </a>
-     <a className="summer-feature" href="/services/lawn" aria-label="Explore lawn and garden care"><img src="/summer-lawn.webp" width={1536} height={1024} alt="A beautifully maintained lawn beside a coastal home"/><div className="summer-caption"><Leaf size={22}/><strong>A greener summer.</strong><ArrowUpRight size={21}/></div></a>
-     <div className="seasonal-index" aria-hidden="true"><span>SNOW</span><span className="index-rule"/><span>MOW</span><span className="index-rule"/><span>MORE</span></div>
-    </div>
-   </div>
-   <div className="container hero-quote-container"><form className="quick-quote brand-quick-quote" onSubmit={e=>{e.preventDefault();window.location.href='/book?service='+service+'&postal='+encodeURIComponent(postal)}}>
-    <div className="quick-intro"><span className="quote-form-icon"><House size={26}/></span><div><strong>Let’s start with your home.</strong><span>Your care. Your quote.</span></div></div>
-    <div className="field"><label htmlFor="home-service">What can we help with?</label><Pick id="home-service" value={service} onChange={setService} label="Service" options={SERVICES.map(s=>({value:s.id,label:s.name}))}/></div>
-    <label htmlFor="home-postal">Your postal code<input id="home-postal" name="postalCode" autoComplete="postal-code" placeholder="e.g. A1A 1A1" value={postal} onChange={e=>setPostal(e.target.value.toUpperCase())} maxLength={7}/></label>
-    <button className="button lime">Get my quote <ArrowRight size={22}/></button>
-   </form></div>
-  </section>
-  <div className="container"><div className="trust-strip brand-trust-strip"><div><MapPin size={23}/>Locally focused</div><div><CalendarDays size={23}/>Every season covered</div><div><ClipboardCheck size={23}/>A clear, agreed scope</div><div><House size={23}/>One property account</div></div></div>
-  <section className="section home-services"><div className="container"><div className="section-head"><div><div className="eyebrow">A LITTLE LESS ON YOUR LIST</div><h2>Outside looks good.<br/><span className="heading-soft">Life feels easier.</span></h2></div><div><p>Everyday essentials and seasonal resets, brought together around your home.</p><a className="text-link" href="/services">Find your service <ArrowUpRight size={21}/></a></div></div>
-   <div className="home-service-grid">{SERVICES.slice(0,2).map(s=><ServiceCard key={s.id} service={s} photo/>)}<div className="feature-card care-feature"><Sparkles size={38} strokeWidth={1.5}/><div className="eyebrow">YOUR CARE PLANNER</div><h3>A good plan<br/>starts with you.</h3><p>Tell us about your driveway, garden and routine. Find the services that fit your property.</p><a className="button white" href="/planner">Build my care plan <ArrowUpRight size={21}/></a><span className="feature-footnote">Adjust your services before requesting a quote.</span></div></div>
-  </div></section>
-  <section className="year-round-section"><div className="container year-round-layout"><div className="year-round-image"><img src="/summer-lawn.webp" width={1536} height={1024} alt="A green lawn and tidy garden at a Newfoundland home" loading="lazy"/><div className="image-season-label"><Leaf size={26}/><span>A little care goes a long way.</span></div></div><div className="year-round-copy"><div className="eyebrow">ONE HOME. FOUR SEASONS.</div><h2>Good care<br/>stays with you.</h2><p>Bring snow clearing, lawn mowing and seasonal cleanups into one familiar plan. Keep every request, visit and property detail together.</p><div className="season-service-list"><div><Snowflake/><span><strong>Winter, made clearer</strong><span>Driveways, walkways and optional ice treatment.</span></span></div><div><Leaf/><span><strong>Room to enjoy summer</strong><span>Regular mowing, garden care and tidy edges.</span></span></div><div><CalendarDays/><span><strong>A fresh start. A tidy finish.</strong><span>Spring and fall cleanups, tailored to your home.</span></span></div></div><a className="button" href="/book?plan=annual">Build my four-season plan <ArrowUpRight size={21}/></a></div></div></section>
-  <section className="section"><div className="container"><div className="section-head"><div><div className="eyebrow">CLEAR FROM THE START</div><h2>Your property.<br/>A simple way forward.</h2></div><p>From the first request to the finished visit, know what happens next.</p></div><div className="workflow brand-workflow">
-   <div><span className="workflow-number">01</span><h3>Tell us about your home.</h3><p>Choose your services and share photos, dimensions and access details.</p></div>
-   <div><span className="workflow-number">02</span><h3>Make the plan yours.</h3><p>Review your quote, included work and proposed terms before accepting.</p></div>
-   <div><span className="workflow-number">03</span><h3>Keep everything in view.</h3><p>Find your visits, completion notes and invoices in your property account.</p></div>
-  </div></div></section>
- </>;
+import { ArrowUpRight, ArrowRight, Snowflake, Leaf, CalendarDays, MapPin, ClipboardCheck, House, Phone, Check, SlidersHorizontal } from 'lucide-react';
+import { SERVICES, CONTACT, SEASON } from '@/lib/catalog';
+import { Pick, ServiceIcon } from './shared';
+import { SeasonalExplorer, PublicFAQ, CareProcess } from './public-care-tools';
+
+export function Home() {
+  const [service, setService] = useState('snow');
+  const [postal, setPostal] = useState('');
+  const [season, setSeason] = useState<'winter' | 'summer'>('winter');
+  const winter = season === 'winter';
+  return <div className="public-upgrade public-home">
+    <section className="public-hero">
+      <div className="container public-hero-grid">
+        <div className="public-hero-copy"><div className="eyebrow"><span className="public-live-dot" />ST. JOHN’S. EVERY SEASON.</div><h1>A home for<br />every season.<br /><em>A little more life<br className="public-small-break" /> for you.</em></h1><p>From the first snowfall to the final lawn cut. Bring your property care together with Trios Snow and Mowing Inc.</p><div className="public-hero-actions"><a className="button lime" href="/book">Build your property plan <ArrowUpRight size={22} /></a><a className="public-light-link" href="/services">Explore all services <ArrowRight size={21} /></a></div><div className="public-hero-assurance"><ClipboardCheck size={21} /><span>Your property. Your scope. Your agreed price.</span></div></div>
+        <div className="public-hero-visual"><div className="public-hero-photo"><img key={season} src={winter ? '/winter-hero.webp' : '/summer-lawn.webp'} width={1536} height={1024} fetchPriority="high" alt={winter ? 'A Newfoundland home in winter with snow cleared from its driveway' : 'An established green lawn and carefully maintained residential garden'} /><div className="public-hero-photo-shade" /><div className="public-hero-photo-caption"><span>{winter ? 'WINTER, MADE CLEARER' : 'SUMMER, MADE EASIER'}</span><strong>{winter ? 'A better start\nto your day.' : 'More weekends.\nLess yard work.'}</strong><a href={winter ? '/services/snow' : '/services/lawn'} aria-label={winter ? 'Explore snow clearing' : 'Explore lawn care'}><ArrowUpRight size={29} /></a></div></div><div className="public-hero-season-switch" aria-label="Preview seasonal care"><button type="button" aria-pressed={winter} onClick={() => setSeason('winter')}><Snowflake size={21} />Snow season</button><button type="button" aria-pressed={!winter} onClick={() => setSeason('summer')}><Leaf size={21} />Growing season</button></div><div className="public-hero-picture-note"><MapPin size={18} /><span>St. John’s & surrounding communities</span></div></div>
+      </div>
+      <div className="container"><form className="public-quote-start" action="/book"><div className="public-quote-intro"><House size={28} /><div><strong>Good care starts here.</strong><span>Tell us what your property needs.</span></div></div><div className="field"><label htmlFor="home-service">Choose your first service</label><Pick id="home-service" value={service} onChange={setService} label="Service" options={SERVICES.map(s => ({ value: s.id, label: s.name }))} /><input type="hidden" name="service" value={service} /></div><label htmlFor="home-postal">Postal code <span>(optional)</span><input id="home-postal" name="postal" autoComplete="postal-code" autoCapitalize="characters" spellCheck={false} placeholder="A1A 1A1" value={postal} onChange={e => setPostal(e.target.value.toUpperCase())} maxLength={7} pattern="[ABCEGHJ-NPRSTVXYabceghj-nprstvxy][0-9][ABCEGHJ-NPRSTVWXYZabceghj-nprstvwxyz][ -]?[0-9][ABCEGHJ-NPRSTVWXYZabceghj-nprstvwxyz][0-9]" /></label><button className="button" type="submit">Start my request <ArrowRight size={21} /></button></form></div>
+    </section>
+    <div className="container public-value-strip"><span><MapPin size={23} />Locally focused</span><span><CalendarDays size={23} />One-time or seasonal</span><span><ClipboardCheck size={23} />Scope agreed first</span><span><House size={23} />Care around your home</span></div>
+    <section className="container public-section"><div className="public-section-heading"><div><div className="eyebrow">MORE ROOM FOR EVERYDAY LIFE</div><h2>The essentials.<br /><span>All in good order.</span></h2></div><div><p>Choose the help you need now. Build on it as the seasons change.</p><a className="text-link" href="/services">Find & compare services <ArrowUpRight size={20} /></a></div></div><div className="public-feature-grid">{SERVICES.filter(s => ['snow', 'lawn'].includes(s.id)).map(s => <article className="public-feature-service" key={s.id}><a href={'/services/' + s.id} className="public-feature-photo"><img src={s.image} width={1536} height={1024} loading="lazy" alt={s.id === 'snow' ? 'Snow surrounding a residential driveway' : 'A green lawn outside a coastal home'} /><span className="public-feature-category"><ServiceIcon name={s.icon} />{s.category} care</span></a><div className="public-feature-body"><h3><a href={'/services/' + s.id}>{s.name}</a></h3><p>{s.summary}</p><div><span>{s.price}{s.unit && <small> {s.unit}</small>}</span><a href={'/services/' + s.id} aria-label={'Learn about ' + s.name}><ArrowUpRight size={23} /></a></div></div></article>)}<article className="public-planner-feature"><span className="public-feature-symbol"><SlidersHorizontal size={32} /></span><div className="eyebrow">YOUR PROPERTY. YOUR PRIORITIES.</div><h3>Not sure<br />where to start?</h3><p>Work through your driveway, garden and routine with the care planner. Turn your priorities into a service request.</p><a className="button lime" href="/planner">Find my care plan <ArrowUpRight size={21} /></a><span>Review every recommendation before submitting.</span></article></div><div className="public-winter-note"><Snowflake size={24} /><div><strong>Planning ahead for winter?</strong><span>{SEASON}. Explore your driveway options and available additions.</span></div><a href="/plans#winter-estimate" className="text-link">Compare winter options <ArrowRight size={20} /></a></div></section>
+    <section className="public-season-background"><div className="container public-section"><SeasonalExplorer /></div></section>
+    <section className="container public-section"><CareProcess /></section>
+    <section className="public-account-band"><div className="container public-account-grid"><div><div className="eyebrow">LESS CHASING. MORE CLARITY.</div><h2>Your property story,<br />kept together.</h2><p>Keep the details that matter close at hand: your service requests, accepted quotes, scheduled care and visit records.</p><a className="button lime" href="/portal">Open my property account <ArrowUpRight size={22} /></a></div><div className="public-account-list">{[[House, 'Property details', 'Address, access needs and the notes you choose to share.'], [ClipboardCheck, 'Quotes & agreements', 'Review scope and pricing before accepting work.'], [CalendarDays, 'Visits & records', 'Follow agreed visits, completion notes and invoices.']].map(([Icon, title, copy]) => { const ItemIcon = Icon as typeof House; return <div key={String(title)}><ItemIcon size={25} /><span><strong>{String(title)}</strong><span>{String(copy)}</span></span><Check size={20} /></div>; })}</div></div></section>
+    <section className="container public-section"><PublicFAQ searchable={false} /></section>
+    <section className="container public-human-help"><div><Phone size={27} /><div><h3>Prefer to talk it through?</h3><p>Speak with Trios about your property and the services you have in mind.</p></div></div><a className="button outline" href={'tel:' + CONTACT.tel}>{CONTACT.phone}<ArrowUpRight size={21} /></a></section>
+  </div>;
 }
