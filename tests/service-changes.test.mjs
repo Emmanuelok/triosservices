@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'trios-service-changes-'));
 const pg=new PGlite();
-for(const filename of ['001_trios.sql','002_service_changes.sql'])await pg.exec(fs.readFileSync(root+'/migrations/postgres/'+filename,'utf8'));
+for(const filename of ['001_trios.sql','002_service_changes.sql','003_moving.sql'])await pg.exec(fs.readFileSync(root+'/migrations/postgres/'+filename,'utf8'));
 const envKeys=['DATABASE_URL','NEXT_PUBLIC_SUPABASE_URL','NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY','SUPABASE_SERVICE_ROLE_KEY','SITE_ORIGIN','OWNER_EMAILS'];
 const oldEnv=Object.fromEntries(envKeys.map(key=>[key,process.env[key]]));
 Object.assign(process.env,{DATABASE_URL:'postgres://local-test-only/secret',NEXT_PUBLIC_SUPABASE_URL:'https://test.supabase.co',NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'test-publishable',SUPABASE_SERVICE_ROLE_KEY:'test-private-secret',SITE_ORIGIN:'https://test.trios',OWNER_EMAILS:'owner@example.com'});

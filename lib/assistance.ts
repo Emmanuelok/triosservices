@@ -1,4 +1,5 @@
 import { SERVICES } from './catalog';
+import { cleanMoving, MOVING_TIERS, movingReadiness } from './moving';
 
 /** Business checks are deliberately deterministic. They never write records or send messages. */
 export type AssistantCategory = 'intake' | 'dispatch' | 'payments' | 'equipment' | 'preparation';
@@ -82,6 +83,10 @@ export function assessIntake(request: AssistanceRequest): IntakeReadiness {
   ];
   if (services.includes('snow')) checks.push(['Driveway category', ['1', '2', '3', 'large'].includes(text(details.drivewaySize))], ['Snow placement area', !!text(details.snowStorage)], ['Surface and slope', !!text(details.surface) && !!text(details.slope)]);
   if (services.some(id => ['lawn', 'garden', 'aeration'].includes(id))) checks.push(['Approximate lawn or garden area', !!text(details.lawnArea)]);
+  if (services.includes('moving')) {
+    const raw = propertyDetails(details.moving), moving = cleanMoving(raw);
+    checks.push(['Moving tier', MOVING_TIERS.some(tier => tier.id === raw.tier)], ['Preferred moving date', isCalendarDate(moving.moveDate)], ['Collection address', moving.origin.address.length >= 5], ['Destination address', moving.destination.address.length >= 5], ['Moving inventory or box count', moving.inventory.some(item => item.item.length > 0) || moving.boxCount > 0], ['Move size', !!moving.size], ['Origin loading arrangements', !!moving.origin.parking], ['Destination loading arrangements', !!moving.destination.parking]);
+  }
   if (details.priority === true) checks.push(['Preferred departure time for priority review', !!text(details.departureTime)]);
   const complete = checks.filter(([, ready]) => ready).length;
   return { complete, total: checks.length, percent: Math.round(complete / checks.length * 100), missing: checks.filter(([, ready]) => !ready).map(([name]) => name), evidence: [`${complete} of ${checks.length} useful intake details supplied.`, 'This checks supplied details only; scope, pricing and availability still need a human review.'] };
@@ -95,6 +100,7 @@ export function preparationSteps(ids: string[]): string[] {
   if (known.some(id => ['lawn', 'garden', 'spring', 'fall', 'aeration', 'hedges'].includes(id))) steps.push('Clear toys, hoses and pet waste from the agreed work area.', 'Provide gate access and keep pets clear during the visit.');
   if (known.includes('aeration')) steps.push('Identify irrigation, shallow cables and other underground features before aeration.');
   if (known.some(id => ['spring', 'fall', 'garden', 'hedges', 'hauling'].includes(id))) steps.push('Agree where clippings or collected materials will be left; off-site disposal must be in the quote.');
+  if (known.includes('moving')) steps.push('Review the agreed moving inventory, both addresses and written transport arrangements.', 'Confirm stairs, elevator reservations, loading space and building access at both addresses.', 'Label boxes by destination room and flag fragile, heavy or unusual items before the move.', 'Keep medication, documents and valuables with you; review item condition and completion notes at handover.');
   if (known.includes('bins')) steps.push('Confirm collection day, bin storage and the permitted collection point.');
   if (known.includes('cleaning')) steps.push('Confirm access, room scope, linen arrangements and any supplies to be used.');
   if (known.includes('furniture')) steps.push('Identify the on-property storage space and any heavy or fragile items for assessment.');
@@ -141,6 +147,12 @@ export function buildServiceAssistance(snapshot: AssistanceSnapshot, options: { 
     const missingWindow = !text(job.time_window) || /to be|tbd|confirm|agreed with customer/i.test(text(job.time_window));
     const facts = [...(!validDay ? ['The saved visit date is missing or invalid.'] : late ? [`The visit is still ${job.status} after its saved date (${job.scheduled_date}).`] : []), ...(unassigned ? ['No crew member is assigned.'] : []), ...(inactive ? ['The assigned crew member is inactive on the loaded roster.'] : []), ...(missingWindow ? ['The visit time window still needs confirmation.'] : [])];
     if (facts.length) results.push({ id: `dispatch:${job.id}`, category: 'dispatch', priority: late || inactive || !validDay ? 'urgent' : 'review', title: late ? 'A past visit still needs a status update' : inactive ? 'Review an inactive crew assignment' : unassigned ? 'Assign this visit to a crew member' : 'Confirm visit arrangements', description: `${label(job.customer_name, 'Customer')} · ${label(job.address, ref(job.id))}`, evidence: facts, action: { tab: 'Schedule', label: crewOnly ? 'Open assigned visit' : 'Review this visit', recordId: job.id }, date: job.scheduled_date });
+    if (job.service === 'moving') {
+      const request = requests.find(item => item.id === job.request_id), details = propertyDetails(job.details ?? request?.details), moving = cleanMoving(details.moving);
+      const readiness = movingReadiness(moving);
+      const flags = [...readiness.missing, ...readiness.flags];
+      if (flags.length) results.push({ id: `move-review:${job.id}`, category: 'dispatch', priority: 'review', title: 'Review the move brief before dispatch', description: `${label(job.customer_name, 'Customer')} · ${label(moving.origin.address, label(job.address, ref(job.id)))}`, evidence: [...flags, 'Tier selection and inventory notes are planning information; confirm written transport, resource and handling arrangements.'], checklist: preparationSteps(['moving']), action: { tab: 'Schedule', label: crewOnly ? 'Review assigned move' : 'Review moving arrangements', recordId: job.id }, date: job.scheduled_date });
+    }
     if (validDay && day >= today && daysBetween(today, day) <= 7) {
       const request = requests.find(r => r.id === job.request_id), details = propertyDetails(job.details ?? request?.details);
       const checklist = preparationSteps(job.service ? [job.service] : serviceIds(request?.services)), accessNotes = text(job.access_notes) || text(details.access);

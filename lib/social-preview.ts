@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const siteOrigin = "https://triosservices.vercel.app";
-export const socialTitle = "Trios Snow and Mowing Inc. | Property care, all year";
-export const socialDescription = "Snow clearing, lawn care and seasonal property services in St. John's. Request a quote, build your care plan and manage your property with Trios Snow and Mowing Inc.";
+export const socialTitle = "Trios Snow and Mowing Inc. | Property care & moving, all year";
+export const socialDescription = "Snow clearing, lawn care, seasonal property services and four tiers of moving help in St. John's. Plan your care or next move with Trios Snow and Mowing Inc.";
 export const socialImage = {
   url: "/og/trios-property-care-v1.jpg",
   width: 1200,

@@ -7,6 +7,7 @@ export interface GuidedCarePlan {
   questions: string[]; preparation: string[]; boundaries: string[];
 }
 export const CARE_GOALS = [
+  { id: 'moving', label: 'Moving & settling in', description: 'Four levels of moving help', prompt: 'Moving services for a home relocation, with inventory and access assessment.' },
   { id: 'winter', label: 'Winter access', description: 'Snow, entrances and ice', prompt: 'Snow clearing for my driveway and winter entrance access.' },
   { id: 'lawn', label: 'Lawn & garden', description: 'A tidy growing season', prompt: 'Lawn mowing and garden maintenance.' },
   { id: 'seasonal', label: 'Seasonal resets', description: 'Spring and autumn cleanups', prompt: 'Spring yard cleanup and fall leaf cleanup.' },
@@ -15,7 +16,9 @@ export const CARE_GOALS = [
   { id: 'annual', label: 'A full year of care', description: 'Winter, mowing and cleanups', prompt: 'An annual all-season plan for snow, lawn mowing, spring cleanup and fall cleanup.' },
 ] as const;
 
+const movingIntent = /\bmoving\b|\bmovers?\b|\brelocat\w*\b|\b(?:house|home|office|apartment|student|storage) move\b|\bmove (?:house|home|office|apartment|belongings|boxes)\b|\b(?:loading|unloading) (?:help|labou?r|truck|van)\b|\bpack(?:ing)? and move\b|\bmove (?:my |our |some |a |the )?(?:furniture|sofa|couch|bed|appliance|piano|safe|boxes|belongings)\b/;
 const rules: { id: string; pattern: RegExp; reason: string }[] = [
+  { id: 'moving', pattern: movingIntent, reason: 'You mentioned relocating, moving belongings or loading support. Compare four tiers and assess both addresses.' },
   { id: 'snow', pattern: /\bsnow(?:blow\w*|clear\w*|fall)?\b|\bwinter\b|\bdriveway\b/, reason: 'You mentioned winter access or driveway care.' },
   { id: 'walkways', pattern: /\bwalkway\w*\b|\bentrance\w*\b|\bsteps?\b|\bfront door\b|\bmobility\b/, reason: 'You mentioned entrance paths, steps or accessibility needs.' },
   { id: 'ice', pattern: /\bice\b|\bsalt(?:ing)?\b|\bsand(?:ing)?\b|\bslip\w*\b/, reason: 'You mentioned ice-control or slippery surfaces.' },
@@ -27,8 +30,8 @@ const rules: { id: string; pattern: RegExp; reason: string }[] = [
   { id: 'fall', pattern: /\bfall\b|\bautumn\b|\bleaves\b|\bleaf cleanup\b/, reason: 'You mentioned autumn or leaf cleanup.' },
   { id: 'hedges', pattern: /\bhedge\w*\b|\bshrub\w*\b/, reason: 'You mentioned small hedges or shrubs.' },
   { id: 'bins', pattern: /\bbins?\b|\bgarbage\b|\bcollection day\b/, reason: 'You mentioned bins or collection-day help.' },
-  { id: 'furniture', pattern: /\bfurniture\b|\bpack.away\b|\bpatio setup\b/, reason: 'You mentioned outdoor furniture setup or storage.' },
-  { id: 'cleaning', pattern: /\bhome cleaning\b|\bhouse cleaning\b|\brental\b|\bturnover\w*\b|\bairbnb\b|\bguest\w*\b/, reason: 'You mentioned home cleaning or rental turnovers.' },
+  { id: 'furniture', pattern: /\b(?:patio|outdoor|garden) furniture\b|\bpack.away\b|\bpatio setup\b/, reason: 'You mentioned outdoor furniture setup or storage.' },
+  { id: 'cleaning', pattern: /\bhome cleaning\b|\bhouse cleaning\b|\brental clean\w*\b|\bmove[ -]?(?:in|out) clean\w*\b|\bturnover\w*\b|\bairbnb\b|\bguest\w*\b/, reason: 'You mentioned home cleaning or rental turnovers.' },
   { id: 'washing', pattern: /\bpressure wash\w*\b|\bexterior wash\w*\b|\bpatio clean\w*\b/, reason: 'You mentioned cleaning hard exterior surfaces.' },
   { id: 'windows', pattern: /\bwindow\w*\b/, reason: 'You mentioned window cleaning; ground access needs assessment.' },
   { id: 'gutters', pattern: /\bgutter\w*\b/, reason: 'You mentioned gutters; access and the appropriate method need assessment.' },
@@ -55,6 +58,7 @@ export function buildPlanForServices(ids: string[], reasons: Record<string, stri
   const questions = ['What are the property address, community and preferred visit frequency?', 'What access restrictions, dimensions, gates, pets or fragile areas should Trios know about?'];
   if (services.some(id => ['snow', 'walkways', 'ice', 'windrow'].includes(id))) questions.push('What are the clearing dimensions, surface, slope and available snow-placement space?', 'Do you need priority review, a departure time considered, walkways or salting included in the quote?');
   if (services.some(id => ['lawn', 'garden', 'aeration'].includes(id))) questions.push('What is the approximate lawn or garden area and the narrowest gate width?');
+  if (services.includes('moving')) questions.push('What are both addresses, your preferred move date and any date flexibility?', 'Which tier, transport arrangements, inventory, box count and packing support do you need?', 'What stairs, elevators, loading space, carry distances, special items and additional stops need review?');
   if (services.includes('cleaning')) questions.push('Which rooms, turnover tasks, linen changes and supplies are in scope?');
   if (services.some(id => ['spring', 'fall', 'hauling'].includes(id))) questions.push('Should collected material stay on the property, or should removal be assessed separately?');
   const boundaries = [...new Set(services.map(id => SERVICES.find(s => s.id === id)!.scope))];
@@ -64,19 +68,28 @@ export function buildPlanForServices(ids: string[], reasons: Record<string, stri
 export function guidedPlan(message: string): GuidedCarePlan {
   const { clean, excluded } = requestedNeeds(message.toLowerCase()), ids: string[] = [], reasons: Record<string, string> = {};
   if (/\b(?:year.round|all.season|annual|full year|four.season)\b/.test(clean)) for (const id of ['snow', 'lawn', 'spring', 'fall']) { ids.push(id); reasons[id] = 'You asked for year-round care, so this covers one part of the annual service cycle.'; }
-  for (const rule of rules) if (rule.pattern.test(clean)) { ids.push(rule.id); reasons[rule.id] ||= rule.reason; }
+  const moving = movingIntent.test(clean);
+  for (const rule of rules) if (rule.pattern.test(clean)) {
+    // Moving access and move dates are not requests for snow or seasonal yard work.
+    if (moving && rule.id === 'snow' && !/\bsnow(?:blow\w*|clear\w*| removal| clearing)?\b|\bwinter (?:access|care|clearing)\b/.test(clean)) continue;
+    if (moving && rule.id === 'walkways' && !/\b(?:walkway|entrance|step)\w* (?:snow|clearing)|\bsnow.{0,25}\b(?:walkway|entrance|steps?)\b/.test(clean)) continue;
+    if (moving && rule.id === 'spring' && !/\bspring (?:yard |garden )?clean\w*|\bwinter litter\b/.test(clean)) continue;
+    if (moving && rule.id === 'fall' && !/\b(?:fall|autumn|leaf) (?:yard |garden )?clean\w*|\bleaves\b/.test(clean)) continue;
+    ids.push(rule.id); reasons[rule.id] ||= rule.reason;
+  }
   const plan = buildPlanForServices(ids.filter(id => !excluded.has(id)), reasons), notes: string[] = [];
   if (plan.services.includes('snow')) {
     const reference = snowEstimate('1', false);
     notes.push(`Winter service season: ${SEASON}.${reference === null ? '' : ` Single-driveway reference pricing starts at $${reference} CAD.`} Final scope, tax, availability and pricing are reviewed separately.`);
   }
+  if (plan.services.includes('moving')) notes.push('Moving Help is labour-only with customer-arranged transport. Local Essentials, Pack & Move and Complete Transition add support subject to written assessment. Both addresses, inventory, access and any unusual items shape the quote; choosing a tier or date is not a reservation.');
   if (plan.services.includes('lawn')) notes.push('Weekly or fortnightly mowing can be requested; area, slope, access and growth affect the quote.');
   if (/\bpriority\b|\bdeparture\b|\bbefore work\b|\bearly morning\b/.test(clean)) notes.push('Include your departure needs for priority review. The agreed response window depends on route capacity.');
   if (/\broof\b|\belectrical\b|\bplumbing\b|\bconstruction\b|\bpesticide\w*\b|\bherbicide\w*\b/.test(clean)) notes.push('Roof work, electrical work, plumbing, construction and pesticide applications are outside routine Trios maintenance. A suitable specialist may be needed.');
   if (plan.recommendations.some(r => r.assessment)) notes.push('Assessment services remain subject to access, scope and availability review; they are not confirmed visits.');
   return { ...plan, mode: 'guided', reply: plan.services.length
     ? `Suggested starting services: ${plan.services.map(id => SERVICES.find(s => s.id === id)!.name).join(', ')}.\n\n${notes.join('\n\n') || 'Review your property details and preparation checklist, then adjust the selected services before requesting a quote.'}\n\nNo service date, payment or booking is confirmed by this plan.`
-    : `${notes.length ? notes.join('\n\n') + '\n\n' : ''}Tell us which areas need care: winter driveway access, lawn mowing, seasonal cleanup, garden upkeep, bins or home cleaning. Include access needs and preferred frequency to make your plan more useful.` };
+    : `${notes.length ? notes.join('\n\n') + '\n\n' : ''}Tell us which areas need care: winter driveway access, lawn mowing, seasonal cleanup, garden upkeep, bins, home cleaning or a move. Include access needs and preferred frequency to make your plan more useful.` };
 }
 
 export function carePlanBookingUrl(ids: string[]): string {

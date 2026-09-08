@@ -5,6 +5,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Pick, Notice, saveData, ErrorNotice } from './shared';
 import { SERVICES, AREAS, money, niceDate } from '@/lib/catalog';
 import { localToday } from '@/lib/validation';
+import { MovingIntake } from './moving-intake';
+import { cleanMoving,defaultMoving } from '@/lib/moving';
 import { toast } from 'sonner';
 export function IntakeFields({form,edit}:{form:any;edit:(k:string,v:any)=>void}){return <>
  <div className="wide"><Notice>Record a customer enquiry received by phone, email or in person. The customer gets a separate record and can access it by signing in with the same email.</Notice></div>
@@ -12,11 +14,12 @@ export function IntakeFields({form,edit}:{form:any;edit:(k:string,v:any)=>void})
  <label>Customer email<input required type="email" autoComplete="email" value={form.email} onChange={e=>edit('email',e.target.value)}/></label>
  <label>Phone number<input required type="tel" minLength={7} autoComplete="tel" value={form.phone} onChange={e=>edit('phone',e.target.value)}/></label>
  <div className="field"><label>Enquiry received through</label><Pick label="Enquiry source" value={form.source} options={['Phone','Email','In person']} onChange={v=>edit('source',v)}/></div>
- <label className="wide">Property address<input required minLength={5} value={form.address} onChange={e=>edit('address',e.target.value)}/></label>
+ <label className="wide">Property address<input required minLength={5} value={form.address} onChange={e=>{edit('address',e.target.value);if(form.moving)edit('moving',{...form.moving,origin:{...form.moving.origin,address:e.target.value}})}}/></label>
  <div className="field"><label>Community</label><Pick label="Customer community" value={form.area} onChange={v=>edit('area',v)} options={AREAS}/></div>
  <label>Postal code<input required maxLength={7} value={form.postalCode} onChange={e=>edit('postalCode',e.target.value.toUpperCase())} placeholder="A1A 1A1"/></label>
- <fieldset className="wide"><legend className="section-title">Requested services</legend><div className="choice-grid">{SERVICES.map(s=><label className="checkbox-row intake-service" key={s.id}><Checkbox checked={form.services.includes(s.id)} onCheckedChange={v=>edit('services',v?[...form.services,s.id]:form.services.filter((id:string)=>id!==s.id))}/>{s.name}</label>)}</div></fieldset>
+ <fieldset className="wide"><legend className="section-title">Requested services</legend><div className="choice-grid">{SERVICES.map(s=><label className="checkbox-row intake-service" key={s.id}><Checkbox checked={form.services.includes(s.id)} onCheckedChange={v=>{edit('services',v?[...form.services,s.id]:form.services.filter((id:string)=>id!==s.id));if(s.id==='moving'&&v&&!form.moving){const moving=defaultMoving();moving.origin.address=form.address;edit('moving',moving);edit('frequency','One-time')}if(s.id==='moving'&&!v)edit('moving',undefined)}}/>{s.name}</label>)}</div></fieldset>
  <div className="field wide"><label>Frequency</label><Pick value={form.frequency} onChange={v=>edit('frequency',v)} options={['One-time','Weekly','Every two weeks','Seasonal','Year-round']}/></div>
+ {form.services.includes('moving')&&<div className="wide"><MovingIntake value={cleanMoving(form.moving)} originAddress={form.address} onChange={value=>{edit('moving',value);if(value.origin.address!==form.address)edit('address',value.origin.address)}}/></div>}
  <label className="wide">Access details and customer requirements<textarea rows={4} maxLength={2000} value={form.notes} onChange={e=>edit('notes',e.target.value)} placeholder="Gate access, driveway dimensions, preferred service timing and anything the crew should know."/></label>
  <label className="wide checkbox-row"><Checkbox checked={form.consent} onCheckedChange={v=>edit('consent',v===true)}/>The customer asked us to record this enquiry and use these details to arrange service.</label>
  </>}

@@ -33,7 +33,7 @@ async function probe() {
   if (lastProbe && Date.now() - lastProbe.at < 15000) return lastProbe;
   if (!probing) probing = (async () => {
     try {
-      const row = await database.prepare("SELECT to_regclass('trios.requests') IS NOT NULL AND to_regclass('trios.service_changes') IS NOT NULL AS schema_ready").first();
+      const row = await database.prepare("SELECT to_regclass('trios.requests') IS NOT NULL AND to_regclass('trios.service_changes') IS NOT NULL AND to_regclass('trios.move_runs') IS NOT NULL AS schema_ready").first();
       const value = { at: Date.now(), database: true, schema: Boolean(row?.schema_ready) };
       lastProbe = value;
       return value;

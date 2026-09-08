@@ -1,6 +1,6 @@
 # Trios Snow and Mowing Inc.
 
-Full property-care platform for St. John’s, Newfoundland and Labrador. Next.js 16 / React 19, PostgreSQL, Supabase verified email sign-in and private storage.
+Property-care and moving platform for St. John’s, Newfoundland and Labrador. Next.js 16 / React 19, PostgreSQL, Supabase verified email sign-in and private storage.
 
 ## Features
 
@@ -17,6 +17,10 @@ Full property-care platform for St. John’s, Newfoundland and Labrador. Next.js
 - Dispatch filters, workload and recurring-visit previews, crew next-visit cards and actionable business priorities.
 - Evidence-based intake, dispatch, billing, equipment and customer-preparation assistants. They analyze supplied business records and prepare suggestions; they do not send messages, charge customers or change jobs autonomously.
 - Connection-aware booking fallback, owner-only launch checks, private-photo bucket verification, search-engine sitemap and branded social previews.
+- Moving service with four assessment-based tiers: Moving Help, Local Essentials, Pack & Move and Complete Transition; public tier finder, comparison, move-type guidance and downloadable preparation checklist.
+- Moving quote intake with two locations, building access, preferred date, room inventory, handling flags, estimated boxes, transport request and separately scoped extras. The same brief appears in customer, admin and crew views and printable quotes.
+- Private moving workspaces with transport confirmation, sequential move-day stages, inventory accountability, completion gates and shared updates. Version checks and a single PostgreSQL transaction keep the moving record, visit status and customer event consistent.
+- Owner moving CSV export and destination-aware private calendar downloads. Public tier selection never confirms a crew, vehicle, date or price.
 
 ## Local development
 
@@ -29,6 +33,10 @@ Use Node.js 22.13 or newer. Run `npm ci`, copy `.env.example` to `.env.local`, f
 The September 2026 upgrade passes `npm audit --omit=dev` with no reported production dependency vulnerabilities. The retained Sites development toolchain still has six reported findings in vinext/image-size and Drizzle's legacy esbuild chain. These tools are not used by the native Vercel production build; review or retire that legacy path before using it again. The release does not force a prerelease framework migration or a Drizzle downgrade.
 
 Service changes are introduced in `migrations/postgres/002_service_changes.sql`. Apply this migration before enabling the upgraded account workspaces. It adds `jobs.access_notes`, private service-change records and a database-enforced upload quota. The existing checked-in PostgreSQL migration runner applies it with the original migration in one transaction; historical applied migration files remain unchanged.
+
+Moving requires `migrations/postgres/003_moving.sql`. It creates private `move_runs` records, revokes browser-role grants and guards move completion at the database boundary. Apply all migrations before deploying with live customer connections; health readiness requires this table. Moving jobs are scheduled individually. A move progresses through planning, ready, loading/handling, delivery/placement, walkthrough and completion. Requested transport must be confirmed by an administrator before readiness; transport arrangements lock when loading starts. Customer concerns and scope changes use the existing messages and service-change review workflows. Inventory check-off means the quantity on that line has been accounted for, including any documented exception; it is not a customer signature or an insurance claim decision.
+
+Moving Help uses customer-arranged transport. Other tiers request reviewed transport arrangements. Do not publish unverified claims about owned vehicles, insurance, licensing exemptions or specialist capability. Before supplying transport, verify the actual operation against Newfoundland and Labrador's [National Safety Code guidance](https://www.gov.nl.ca/motorregistration/commercial-vehicles-and-drivers/national-safety-codes/) and [commercial inspection guidance](https://www.gov.nl.ca/motorregistration/commercial-vehicles-and-drivers/commercial-inspections/). Written quote scope and handling terms should follow the [federal consumer moving advice](https://ised-isde.canada.ca/site/office-consumer-affairs/en/buying-and-leasing-big-ticket-items/moving-advice). These are owner setup decisions; the platform does not certify compliance or supply coverage.
 
 ## Vercel activation
 

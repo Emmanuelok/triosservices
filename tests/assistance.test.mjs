@@ -174,3 +174,31 @@ test('edited care plans hand off only supported unique service IDs and keep rele
   assert.equal(api.carePlanBookingUrl(['unknown']), '/book');
   assert.deepEqual(api.buildPlanForServices([]).questions, []);
 });
+
+test('moving intent produces a move plan without treating access or moving month as seasonal work', () => {
+  for (const needs of ['I need movers for an apartment in winter, with stairs and a narrow driveway.', 'Moving my rental furniture this spring.', 'Move my sofa to a different apartment.', 'An office move in autumn with steps at the entrance.']) {
+    const plan = api.guidedPlan(needs);
+    assert.ok(plan.services.includes('moving'), needs);
+    assert.ok(!plan.services.some(id => ['snow', 'walkways', 'spring', 'fall', 'furniture', 'cleaning'].includes(id)), needs);
+    assert.match(plan.questions.join(' '), /both addresses/);
+    assert.match(plan.reply, /customer-arranged transport/);
+  }
+  assert.ok(api.guidedPlan('Moving home and spring yard cleanup').services.includes('spring'));
+  assert.ok(api.guidedPlan('Moving in winter with snow clearing for the driveway').services.includes('snow'));
+  assert.ok(api.guidedPlan('Moving house and move-out cleaning').services.includes('cleaning'));
+  assert.deepEqual(api.guidedPlan('Patio furniture setup and pack-away').services, ['furniture']);
+  assert.ok(!api.guidedPlan('Lawn mowing without moving services').services.includes('moving'));
+});
+
+test('moving quote and dispatch assistance finds missing briefs and unusual handling needs', () => {
+  const request = { id: 'move', services: ['moving'], details: {} };
+  const readiness = api.assessIntake(request);
+  for (const missing of ['Moving tier', 'Preferred moving date', 'Collection address', 'Destination address', 'Moving inventory or box count']) assert.ok(readiness.missing.includes(missing));
+  const results = checks({ jobs: [visit('move', { service: 'moving', details: { moving: { tier: 'pack', specialItems: 'A heavy safe needs review.' } } })] });
+  const review = results.find(item => item.id === 'move-review:move');
+  assert.ok(review);
+  assert.equal(review.priority, 'review');
+  assert.match(review.evidence.join(' '), /transport|handling/);
+  assert.ok(review.checklist.some(step => /both addresses/.test(step)));
+  assert.ok(!checks({ jobs: [visit('closed-move', { service: 'moving', status: 'completed' })] }).some(item => item.id === 'move-review:closed-move'));
+});

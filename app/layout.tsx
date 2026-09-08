@@ -6,6 +6,9 @@ import "./operations-upgrade.css";
 import "./customer-upgrade.css";
 import "./assistants-upgrade.css";
 import "./workflow-upgrade.css";
+import "./moving-upgrade.css";
+import "./moving-intake.css";
+import "./moving-workspace.css";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -16,7 +19,7 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteOrigin),
-  title: "Trios · Property care, all year",
+  title: "Trios · Property care & moving, all year",
   description: socialDescription,
   icons: { icon: "/favicon.svg?v=3", shortcut: "/favicon.svg?v=3" },
   openGraph: socialOpenGraph,

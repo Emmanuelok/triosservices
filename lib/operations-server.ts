@@ -1,12 +1,13 @@
 import { z } from 'zod';
 import { sql, event, identity } from './server';
 import { SERVICES, snowEstimate } from './catalog';
-import { currency, validDate } from './validation';
+import { movingSchema } from './moving';
+import { currency, validDate, localToday } from './validation';
 const text = (min=1,max=500)=>z.string().trim().min(min).max(max);
 export const settingsSchema=z.object({quoteTerms:text(0,4000),paymentInstructions:text(0,2000),dailyCapacity:z.number().int().min(1).max(100),invoiceDays:z.number().int().min(0).max(90)});
 export const defaults={quoteTerms:'',paymentInstructions:'Contact Trios to confirm e-transfer recipient details before sending payment.',dailyCapacity:12,invoiceDays:7};
 export const operationsSchemas={
- intake:z.object({action:z.literal('intake'),id:z.string().uuid(),name:text(2,100),email:z.string().email().max(200),phone:text(7,30),address:text(5,250),area:text(2,100),postalCode:text(6,8).regex(/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTVWXYZ][ -]?\d[ABCEGHJ-NPRSTVWXYZ]\d$/i),services:z.array(z.string().refine(s=>SERVICES.some(v=>v.id===s))).min(1).max(17),frequency:text(2,60),source:z.enum(['Phone','Email','In person']),notes:text(0,2000),consent:z.literal(true)}),
+ intake:z.object({action:z.literal('intake'),id:z.string().uuid(),name:text(2,100),email:z.string().email().max(200),phone:text(7,30),address:text(5,250),area:text(2,100),postalCode:text(6,8).regex(/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTVWXYZ][ -]?\d[ABCEGHJ-NPRSTVWXYZ]\d$/i),services:z.array(z.string().refine(s=>SERVICES.some(v=>v.id===s))).min(1).max(SERVICES.length),frequency:text(2,60),source:z.enum(['Phone','Email','In person']),notes:text(0,2000),moving:movingSchema.optional(),consent:z.literal(true)}).superRefine((value,ctx)=>{if(value.services.includes('moving')){if(!value.moving)ctx.addIssue({code:'custom',path:['moving'],message:'Complete the moving plan.'});else{if(value.moving.origin.address!==value.address)ctx.addIssue({code:'custom',path:['address'],message:'The collection address must match the property address.'});if(value.moving.moveDate<localToday())ctx.addIssue({code:'custom',path:['moving','moveDate'],message:'Choose today or a later moving date.'});}}}),
  offline_approval:z.object({action:z.literal('offline_approval'),id:z.string().uuid(),quoteVersion:text(1,100),signer:text(2,100),method:z.enum(['Phone','Email','Signed document','In person']),evidence:text(15,2000),confirmed:z.literal(true)}),
  settings:z.object({action:z.literal('settings'),...settingsSchema.shape}),
  dispatch:z.object({action:z.literal('dispatch'),commandId:z.string().uuid(),crewId:z.string().uuid(),jobs:z.array(z.object({id:z.string().uuid(),version:z.number().int().min(0)})).min(1).max(100)}),
@@ -31,7 +32,7 @@ export async function handleOperations(p:any,user:NonNullable<Awaited<ReturnType
   const email=p.email.toLowerCase();let c=await db.prepare('SELECT * FROM contacts WHERE email=?').bind(email).first();
   if(!c){const id=crypto.randomUUID();await db.prepare('INSERT OR IGNORE INTO contacts (id,name,email,phone,notes,created_at) VALUES (?,?,?,?,?,?)').bind(id,p.name,email,p.phone,p.notes,now).run();c=await db.prepare('SELECT * FROM contacts WHERE email=?').bind(email).first();}
   const ownerId=c.user_id||'contact:'+c.id;
-  const details={drivewaySize:'large',salt:false,walkway:false,priority:false,photos:[],access:p.notes,source:p.source,surface:'To assess',slope:'To assess'};
+  const details={drivewaySize:'large',salt:false,walkway:false,priority:false,photos:[],access:p.notes,source:p.source,surface:'To assess',slope:'To assess',...(p.services.includes('moving')?{moving:p.moving}: {})};
   await db.batch([db.prepare('INSERT INTO requests (id,user_id,customer_name,email,phone,address,area,postal_code,services,frequency,details,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(p.id,ownerId,p.name,email,p.phone,p.address,p.area,p.postalCode.toUpperCase(),JSON.stringify([...new Set(p.services)]),p.frequency,JSON.stringify(details),'requested',now,now),event(ownerId,p.id,'requested',`${p.source} service request recorded by Trios. Scope and price await review.`)]);
   return Response.json({ok:true,id:p.id},{status:201});
  }

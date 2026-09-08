@@ -20,15 +20,38 @@ const {Booking,cleanForm,consumeQuery,initial}=await import(work+'/customer-isol
 assert.equal(cleanForm({...initial,details:{plan:'lawn'}}).details.plan,'lawn');
 assert.deepEqual(consumeQuery(cleanForm(initial)).services,['lawn']);
 assert.equal(consumeQuery(cleanForm(initial)).frequency,'Weekly');
+window.location.search='?service=moving&tier=help&moveType=Loading%20%2F%20unloading%20only&transport=Request%20transport';
+const moveQuery=consumeQuery(cleanForm(initial));
+assert.deepEqual(moveQuery.services,['moving']);assert.equal(moveQuery.frequency,'One-time');assert.equal(moveQuery.details.moving.tier,'help');assert.equal(moveQuery.details.moving.transport,'Customer arranged');assert.equal(moveQuery.details.moving.moveType,'Loading / unloading only');
+window.location.search='?services=moving,cleaning&tier=complete';const transitionQuery=consumeQuery(cleanForm(initial));assert.equal(transitionQuery.frequency,'One-time');assert.deepEqual(transitionQuery.services,['moving','cleaning']);
+window.location.search='?service=moving&tier=pack&transport=Customer%20arranged';assert.equal(consumeQuery(cleanForm(initial)).details.moving.transport,'Customer arranged');
+window.location.search='?service=moving&tier=unrecognized&moveType=invalid&transport=unsafe';
+const safeQuery=consumeQuery(cleanForm(initial));assert.equal(safeQuery.details.moving.tier,'essentials');assert.equal(safeQuery.details.moving.moveType,'Home move');assert.equal(safeQuery.details.moving.transport,'Request transport');
+window.location.search='?plan=care-planner';sessionStorage.setItem('trios-planner-handoff',JSON.stringify({version:1,services:['moving'],frequency:'Seasonal',details:{plan:'care-planner'}}));const plannerMove=consumeQuery(cleanForm({...initial,address:'123 Current Property'}));assert.equal(plannerMove.details.moving.tier,'essentials');assert.equal(plannerMove.details.moving.origin.address,'123 Current Property');assert.equal(plannerMove.frequency,'One-time');assert.equal(sessionStorage.getItem('trios-planner-handoff'),null);
+sessionStorage.setItem('trios-planner-handoff',JSON.stringify({version:1,services:['moving','lawn'],frequency:'Weekly',details:{plan:'care-planner'}}));assert.equal(consumeQuery(cleanForm(initial)).frequency,'Mixed / help me choose');
+const movingDraft={...moveQuery.details.moving,origin:{...moveQuery.details.moving.origin,address:'100 Private A Street'},destination:{...moveQuery.details.moving.destination,address:'200 Private destination'},inventory:[{id:'11111111-1111-4111-8111-111111111111',item:'Private inventory item',room:'Bedroom',quantity:2,fragile:true,heavy:false,disassembly:false,packed:false,notes:'Private handling note'}]};
+const restoredMove=cleanForm({...initial,services:['moving'],details:{...initial.details,moving:movingDraft}});assert.equal(restoredMove.details.moving.destination.address,'200 Private destination');assert.equal(restoredMove.details.moving.inventory[0].quantity,2);
+window.location.search='?plan=lawn';
 const prefix='trios-quote-draft:v2:';
-storage.set(prefix+'customer-a',JSON.stringify({version:2,scope:'customer-a',savedAt:Date.now(),form:{...initial,name:'Private A',address:'100 Private A Street',details:{...initial.details,access:'A gate note',photos:['11111111-1111-4111-8111-111111111111']}}}));
+storage.set(prefix+'customer-a',JSON.stringify({version:2,scope:'customer-a',savedAt:Date.now(),form:{...initial,name:'Private A',address:'100 Private A Street',details:{...initial.details,moving:movingDraft,access:'A gate note',photos:['11111111-1111-4111-8111-111111111111']}}}));
 function render(){stateIndex=0;refIndex=0;effectIndex=0;effects=[];dirty=false;const tree=Booking();for(const effect of effects)effect();return tree}
 function settle(){for(let attempt=0;attempt<10;attempt++){render();if(!dirty)return}throw Error('Hook render did not settle')}
-settle();assert.equal(state[0].address,'100 Private A Street');
+settle();assert.equal(state[0].address,'100 Private A Street');assert.equal(state[0].details.moving.destination.address,'200 Private destination');
+// Exercise the actual MovingIntake date handler through Booking's persisted state and review transition.
+function findNode(node,predicate){if(Array.isArray(node)){for(const child of node){const found=findNode(child,predicate);if(found)return found}return null}if(!node||typeof node!=='object')return null;if(predicate(node))return node;return findNode(node.props?.children,predicate)}
+function nodeText(node){if(Array.isArray(node))return node.map(nodeText).join('');if(typeof node==='string'||typeof node==='number')return String(node);return node&&typeof node==='object'?nodeText(node.props?.children):''}
+let bookingTree=render();findNode(bookingTree,node=>node.type==='button'&&nodeText(node).includes('Moving services')).props.onClick();settle();
+bookingTree=render();findNode(bookingTree,node=>node.type==='form').props.onSubmit({preventDefault(){}});settle();assert.equal(state[1],1);
+let intakeNode=findNode(render(),node=>typeof node.type==='function'&&node.type.name==='MovingIntake');let intakeTree=intakeNode.type(intakeNode.props);
+findNode(intakeTree,node=>node.type==='input'&&node.props.type==='date').props.onChange({target:{value:'2099-06-01'}});settle();assert.equal(state[0].details.moving.moveDate,'2099-06-01');
+intakeNode=findNode(render(),node=>typeof node.type==='function'&&node.type.name==='MovingIntake');intakeTree=intakeNode.type(intakeNode.props);assert.equal(findNode(intakeTree,node=>node.type==='input'&&node.props.type==='date').props.value,'2099-06-01');
+findNode(intakeTree,node=>node.type==='input'&&node.props.placeholder==='e.g. 2-bedroom apartment or 8 desks').props.onChange({target:{value:'2-bedroom apartment'}});settle();assert.equal(state[0].details.moving.moveDate,'2099-06-01');
+bookingTree=render();findNode(bookingTree,node=>node.type==='form').props.onSubmit({preventDefault(){}});settle();assert.equal(state[1],2,'Valid moving details advance to the review step');
+assert.equal(findNode(render(),node=>typeof node.type==='function'&&node.type.name==='MovingBrief').props.value.moveDate,'2099-06-01');assert.equal(JSON.parse(storage.get(prefix+'customer-a')).form.details.moving.moveDate,'2099-06-01');
 globalThis.__account={data:{user:{id:'customer-b',email:'b@example.com',name:'Customer B'},properties:[]},loading:false,error:''};
 render();
 assert.equal(storage.has(prefix+'customer-b'),false,'An account-change render must never save the previous form under the next account');
-settle();const b=JSON.parse(storage.get(prefix+'customer-b'));assert.equal(b.form.address,'');assert.equal(b.form.details.access,'');assert.deepEqual(b.form.details.photos,[]);assert.equal(b.form.name,'Customer B');
-listeners.get('trios:signout')();assert.equal(storage.has(prefix+'customer-a'),false);assert.equal(storage.has(prefix+'customer-b'),false);assert.equal(state[0].address,'');
-console.log('PASS lawn plan query and draft preservation; PASS account-switch render cannot save old form into the new account; PASS private access notes/photos stay scoped; PASS sign-out clears all account drafts');
+settle();const b=JSON.parse(storage.get(prefix+'customer-b'));assert.equal(b.form.address,'');assert.equal(b.form.details.access,'');assert.deepEqual(b.form.details.photos,[]);assert.equal(b.form.name,'Customer B');assert.equal(b.form.details.moving,undefined,'Private moving destination and inventory must not cross account boundaries');
+listeners.get('trios:signout')();assert.equal(storage.has(prefix+'customer-a'),false);assert.equal(storage.has(prefix+'customer-b'),false);assert.equal(state[0].address,'');assert.equal(state[0].details.moving,undefined);
+console.log('PASS lawn plan query and draft preservation; PASS account-switch render cannot save old form into the new account; PASS private access notes/photos stay scoped; PASS moving tier/type handoff; PASS controlled moving date survives edits, review and saved draft; PASS private moving addresses and inventory stay scoped; PASS sign-out clears all account drafts');
 for(const slot of effectSlots)slot?.cleanup?.();fs.unlinkSync(work+'/customer-isolation-bundle.mjs');
