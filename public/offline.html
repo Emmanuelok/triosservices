@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en-CA">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1b5256" />
+    <meta name="robots" content="noindex" />
+    <title>Trios · You’re offline</title>
+    <style>
+      :root { color-scheme: only light; font-family: "Avenir Next", "Segoe UI", Arial, sans-serif; }
+      * { box-sizing: border-box; }
+      body {
+        min-height: 100svh;
+        margin: 0;
+        display: grid;
+        place-items: center;
+        padding: max(24px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+        color: #173f42;
+        background: radial-gradient(circle at 15% 15%, #e8f2dc 0, transparent 35%), linear-gradient(145deg, #f8faf9, #edf4f2);
+      }
+      main { width: min(620px, 100%); }
+      .logo { display: block; width: min(330px, 80%); height: auto; margin: 0 auto 30px; }
+      .card { padding: clamp(28px, 7vw, 52px); background: #fff; border: 1px solid #d5e2dd; border-radius: 24px; box-shadow: 0 24px 70px rgb(19 62 66 / 13%); }
+      .mark { width: 58px; height: 58px; display: grid; place-items: center; margin-bottom: 24px; color: #fff; background: #1b5256; border-radius: 18px; font-size: 30px; }
+      .eyebrow { color: #55724f; font-size: 12px; font-weight: 800; letter-spacing: .12em; }
+      h1 { margin: 10px 0 16px; font-size: clamp(36px, 9vw, 58px); line-height: 1.02; letter-spacing: -.045em; }
+      p { margin: 0; color: #496569; font-size: 17px; line-height: 1.75; }
+      .privacy { margin-top: 14px; font-size: 15px; }
+      .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+      form { margin: 0; }
+      button, a { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; padding: 12px 20px; border-radius: 11px; font: inherit; font-weight: 750; text-decoration: none; }
+      button { color: #fff; background: #1b5256; border: 0; cursor: pointer; }
+      a { color: #1b5256; background: #fff; border: 1px solid #bdcfcb; }
+      footer { margin-top: 20px; color: #607570; font-size: 14px; text-align: center; }
+      @media (max-width: 420px) { .actions, form, button, a { width: 100%; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img class="logo" src="/brand/trios-logo.png" width="883" height="300" alt="Trios Snow and Mowing Inc." />
+      <section class="card">
+        <div class="mark" aria-hidden="true">↻</div>
+        <div class="eyebrow">CONNECTION PAUSED</div>
+        <h1>You’re offline.</h1>
+        <p>Trios can reconnect as soon as this phone or tablet is back online.</p>
+        <p class="privacy">For your privacy, customer, crew, and operations information is never stored for offline viewing.</p>
+        <div class="actions">
+          <form action="/" method="get"><button type="submit">Try again</button></form>
+          <a href="tel:+17094700727">Call +1 (709) 470 0727</a>
+        </div>
+      </section>
+      <footer>Property care &amp; moving in St. John’s, Newfoundland &amp; Labrador</footer>
+    </main>
+  </body>
+</html>

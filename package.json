@@ -11,7 +11,7 @@
     "prebuild": "node scripts/prepare-film-assets.mjs",
     "build": "next build --webpack",
     "start": "next start",
-    "test": "node --test tests/workflows.test.mjs tests/workspace-access.test.mjs tests/session-reset.test.mjs tests/postgres-migration.test.mjs tests/security-hardening.test.mjs tests/service-changes.test.mjs tests/assistance.test.mjs tests/customer-isolation.test.mjs tests/service-change-isolation.test.mjs tests/moving-domain.test.mjs tests/move-runs.test.mjs tests/moving-isolation.test.mjs",
+    "test": "node --test tests/workflows.test.mjs tests/workspace-access.test.mjs tests/session-reset.test.mjs tests/postgres-migration.test.mjs tests/security-hardening.test.mjs tests/service-changes.test.mjs tests/assistance.test.mjs tests/customer-isolation.test.mjs tests/service-change-isolation.test.mjs tests/moving-domain.test.mjs tests/move-runs.test.mjs tests/moving-isolation.test.mjs tests/pwa.test.mjs",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
     "typecheck": "tsc --noEmit",

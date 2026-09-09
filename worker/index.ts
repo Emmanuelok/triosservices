@@ -41,10 +41,18 @@ const worker = {
     }
 
     const response = await handler.fetch(request, env, ctx);
-    if (/^\/(operations|crew|portal|staff|api)(?:\/|$)/.test(url.pathname)) {
+    if (/^\/(operations|crew|portal|staff|sign-in|sign-out|auth|api)(?:\/|$)/.test(url.pathname)) {
       const headers = new Headers(response.headers);
       headers.set('Cache-Control', 'private, no-store, max-age=0');
       headers.set('Pragma', 'no-cache');
+      return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+    }
+    if (url.pathname === '/sw.js') {
+      const headers = new Headers(response.headers);
+      headers.set('Content-Type', 'application/javascript; charset=utf-8');
+      headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+      headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self'; object-src 'none'");
+      headers.set('Service-Worker-Allowed', '/');
       return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
     }
     return response;

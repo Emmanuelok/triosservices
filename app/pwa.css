@@ -1,0 +1,120 @@
+.pwa-install-card {
+  position: fixed;
+  z-index: 45;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: min(430px, calc(100vw - 36px));
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  padding: 18px;
+  color: #173f42;
+  background: #fff;
+  border: 1px solid #c9d9d3;
+  border-radius: 18px;
+  box-shadow: 0 20px 56px rgb(19 62 66 / 24%);
+  animation: pwa-install-arrive 320ms ease-out both;
+}
+
+.pwa-install-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  color: #1b5256;
+  background: #e9f2df;
+  border-radius: 14px;
+}
+
+.pwa-install-copy {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.pwa-install-eyebrow {
+  color: #55724f;
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  line-height: 1.4;
+}
+
+.pwa-install-copy > strong {
+  font-size: 1.08rem;
+  line-height: 1.35;
+}
+
+.pwa-install-copy p {
+  color: #496569;
+  font-size: .9rem;
+  line-height: 1.55;
+}
+
+.pwa-install-action {
+  width: fit-content;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 7px;
+  padding: 10px 15px;
+  color: #fff;
+  background: #1b5256;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 750;
+}
+
+.pwa-install-action:hover {
+  background: #286b70;
+}
+
+.pwa-install-close {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin: -8px -8px 0 0;
+  color: #36595c;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+}
+
+.pwa-install-close:hover {
+  background: #edf4f2;
+}
+
+@keyframes pwa-install-arrive {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 560px) {
+  .pwa-install-card {
+    right: max(10px, env(safe-area-inset-right));
+    left: max(10px, env(safe-area-inset-left));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    width: auto;
+    padding: 16px;
+    border-radius: 16px;
+  }
+}
+
+@media (display-mode: standalone) {
+  .pwa-install-card { display: none; }
+  body { min-height: 100dvh; }
+}
+
+body:has(input:focus, textarea:focus, select:focus) .pwa-install-card {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pwa-install-card { animation: none; }
+}
